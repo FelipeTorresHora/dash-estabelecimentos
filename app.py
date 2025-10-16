@@ -258,7 +258,7 @@ def main():
                 dist_situacao['Quantidade'] / dist_situacao['Quantidade'].sum() * 100
             ).round(2)
             dist_situacao['Percentual'] = dist_situacao['Percentual'].astype(str) + '%'
-            st.dataframe(dist_situacao, hide_index=True, use_container_width=True)
+            st.dataframe(dist_situacao, hide_index=True, width='stretch')
 
         st.markdown("---")
 
@@ -368,7 +368,7 @@ def main():
                 top_municipios['Quantidade'] / len(df_filtered) * 100
             ).round(2)
             top_municipios['Percentual'] = top_municipios['Percentual'].astype(str) + '%'
-            st.dataframe(top_municipios, hide_index=True, use_container_width=True, height=600)
+            st.dataframe(top_municipios, hide_index=True, width='stretch', height=600)
 
     # TAB 4: Análise Temporal
     with tab4:
@@ -463,7 +463,7 @@ def main():
             top_cnaes['Quantidade'] / len(df_filtered) * 100
         ).round(2)
         top_cnaes['Percentual'] = top_cnaes['Percentual'].astype(str) + '%'
-        st.dataframe(top_cnaes, hide_index=True, use_container_width=True, height=600)
+        st.dataframe(top_cnaes, hide_index=True, width='stretch', height=600)
 
         st.markdown("---")
 
@@ -503,14 +503,14 @@ def main():
                 data=csv_data,
                 file_name=f"estabelecimentos_filtrados_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                 mime="text/csv",
-                use_container_width=True
+                width='stretch'
             )
 
         with col2:
             st.subheader("Formato Excel")
             st.markdown("Exportar dados em formato Excel (.xlsx)")
 
-            if st.button("Preparar Excel", use_container_width=True):
+            if st.button("Preparar Excel", width='stretch'):
                 with st.spinner("Preparando arquivo Excel..."):
                     excel_data = utils.export_to_excel(df_filtered)
 
@@ -519,7 +519,7 @@ def main():
                         data=excel_data,
                         file_name=f"estabelecimentos_filtrados_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        use_container_width=True
+                        width='stretch'
                     )
 
         st.markdown("---")
@@ -532,7 +532,7 @@ def main():
         st.dataframe(
             df_filtered.head(n_rows),
             hide_index=True,
-            use_container_width=True,
+            width='stretch',
             height=400
         )
 

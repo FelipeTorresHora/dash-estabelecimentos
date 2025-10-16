@@ -121,13 +121,12 @@ O dataset contém informações sobre estabelecimentos da RFB com as seguintes c
 ## Solução de Problemas
 
 ### Erro ao carregar dados
-- Verifique se o arquivo `estabelecimentos_filtrado.csv` está no diretório correto
+- Verifique se o arquivo csv está no diretório correto
 - Certifique-se de que o arquivo não está corrompido
 
 ### Mapa não aparece
-- Verifique se o arquivo `municipios_rs.json` está no mesmo diretório que o `app.py`
+- Verifique se o arquivo `municipios_rs.json` está no diretório dados
 - O mapa usa o GeoJSON dos municípios do RS para criar a visualização coroplética
-- Se o arquivo estiver ausente, o resto do dashboard continuará funcionando normalmente
 
 ### Dashboard lento
 - O primeiro carregamento pode levar alguns segundos devido ao tamanho do dataset
@@ -135,21 +134,3 @@ O dataset contém informações sobre estabelecimentos da RFB com as seguintes c
 
 ### Erro de memória
 - O dataset é grande (~4.6 milhões de registros)
-- Certifique-se de ter pelo menos 4GB de RAM disponível
-
-## Contribuições
-
-Sugestões e melhorias são bem-vindas!
-
-## Licença
-
-Este projeto é de uso livre para fins educacionais e analíticos.
-
-## Contato
-
-Desenvolvido por Felipe
-
----
-
-**Versão**: 1.0.0
-**Data**: 2025-10-14
