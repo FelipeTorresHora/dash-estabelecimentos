@@ -99,6 +99,8 @@ def get_top_municipios(df, top_n=20):
     """
     top_mun = df['nome_municipio'].value_counts().head(top_n).reset_index()
     top_mun.columns = ['Município', 'Quantidade']
+    # Sanitizar dados para evitar erros JavaScript
+    top_mun = sanitize_chart_data(top_mun, text_columns=['Município'], numeric_columns=['Quantidade'])
     return top_mun
 
 
@@ -108,6 +110,8 @@ def get_top_cnaes(df, top_n=20):
     """
     top_cnae = df['cnae_fiscal_principal'].value_counts().head(top_n).reset_index()
     top_cnae.columns = ['CNAE', 'Quantidade']
+    # Sanitizar dados para evitar erros JavaScript
+    top_cnae = sanitize_chart_data(top_cnae, text_columns=['CNAE'], numeric_columns=['Quantidade'])
     return top_cnae
 
 
@@ -117,6 +121,8 @@ def get_situacao_distribution(df):
     """
     dist = df['situacao_descricao'].value_counts().reset_index()
     dist.columns = ['Situação', 'Quantidade']
+    # Sanitizar dados para evitar erros JavaScript
+    dist = sanitize_chart_data(dist, text_columns=['Situação'], numeric_columns=['Quantidade'])
     return dist
 
 
@@ -126,6 +132,8 @@ def get_matriz_filial_distribution(df):
     """
     dist = df['tipo_estabelecimento'].value_counts().reset_index()
     dist.columns = ['Tipo', 'Quantidade']
+    # Sanitizar dados para evitar erros JavaScript
+    dist = sanitize_chart_data(dist, text_columns=['Tipo'], numeric_columns=['Quantidade'])
     return dist
 
 
@@ -139,6 +147,9 @@ def get_timeline_data(df, date_column='ano_inicio'):
     # Filtrar anos válidos (remover NaN e anos inválidos)
     timeline = timeline[timeline['Ano'].notna()]
     timeline = timeline[(timeline['Ano'] >= 1900) & (timeline['Ano'] <= datetime.now().year)]
+
+    # Sanitizar dados para evitar erros JavaScript
+    timeline = sanitize_chart_data(timeline, numeric_columns=['Ano', 'Quantidade'])
 
     return timeline
 
@@ -233,4 +244,42 @@ def get_municipios_data_for_map(df):
     # Normalizar nomes dos municípios
     mun_counts['municipio_normalizado'] = mun_counts['municipio'].apply(normalize_municipio_name)
 
+    # Sanitizar dados para evitar erros JavaScript
+    mun_counts = sanitize_chart_data(mun_counts, text_columns=['municipio', 'municipio_normalizado'], numeric_columns=['quantidade'])
+
     return mun_counts
+
+
+def sanitize_chart_data(df, text_columns=None, numeric_columns=None):
+    """
+    Sanitiza dados para evitar erros JavaScript nos gráficos Plotly
+
+    Args:
+        df: DataFrame a ser sanitizado
+        text_columns: lista de colunas de texto para limpar caracteres especiais
+        numeric_columns: lista de colunas numéricas para remover NaN/Inf
+
+    Returns:
+        DataFrame sanitizado
+    """
+    df_clean = df.copy()
+
+    # Limpar colunas de texto
+    if text_columns:
+        for col in text_columns:
+            if col in df_clean.columns:
+                # Remover caracteres problemáticos e substituir por versões seguras
+                df_clean[col] = df_clean[col].astype(str)
+                df_clean[col] = df_clean[col].str.replace(';', ',', regex=False)
+                df_clean[col] = df_clean[col].str.replace("'", '', regex=False)
+                df_clean[col] = df_clean[col].str.replace('"', '', regex=False)
+
+    # Limpar colunas numéricas
+    if numeric_columns:
+        for col in numeric_columns:
+            if col in df_clean.columns:
+                # Remover NaN e valores infinitos
+                df_clean = df_clean[df_clean[col].notna()]
+                df_clean = df_clean[~df_clean[col].isin([float('inf'), float('-inf')])]
+
+    return df_clean

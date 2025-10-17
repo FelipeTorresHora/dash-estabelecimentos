@@ -213,7 +213,7 @@ def main():
             )
             fig_mf.update_traces(textposition='inside', textinfo='percent+label')
             fig_mf.update_layout(height=400)
-            st.plotly_chart(fig_mf, use_container_width=True)
+            st.plotly_chart(fig_mf, use_container_width=True, config={'displayModeBar': False})
 
         with col2:
             st.subheader("Distribuição por Situação")
@@ -227,7 +227,7 @@ def main():
                 color_discrete_sequence=px.colors.qualitative.Set1
             )
             fig_sit.update_layout(showlegend=False, height=400)
-            st.plotly_chart(fig_sit, use_container_width=True)
+            st.plotly_chart(fig_sit, use_container_width=True, config={'displayModeBar': False})
 
     # TAB 2: Situação Cadastral
     with tab2:
@@ -250,7 +250,7 @@ def main():
             )
             fig.update_traces(texttemplate='%{text:,}', textposition='outside')
             fig.update_layout(showlegend=False, height=400)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
         with col2:
             st.subheader("Tabela de Dados")
@@ -281,7 +281,7 @@ def main():
             labels={'ano_situacao': 'Ano', 'situacao_descricao': 'Situação'}
         )
         fig_evolucao.update_layout(height=500)
-        st.plotly_chart(fig_evolucao, use_container_width=True)
+        st.plotly_chart(fig_evolucao, use_container_width=True, config={'displayModeBar': False})
 
     # TAB 3: Análise Geográfica
     with tab3:
@@ -331,7 +331,7 @@ def main():
                 )
             )
 
-            st.plotly_chart(fig_map, use_container_width=True)
+            st.plotly_chart(fig_map, use_container_width=True, config={'displayModeBar': False})
 
         except Exception as e:
             st.warning(f"Não foi possível carregar o mapa: {str(e)}")
@@ -360,7 +360,7 @@ def main():
             fig_mun.update_traces(texttemplate='%{text:,}', textposition='outside')
             fig_mun.update_layout(height=600, showlegend=False)
             fig_mun.update_yaxes(categoryorder='total ascending')
-            st.plotly_chart(fig_mun, use_container_width=True)
+            st.plotly_chart(fig_mun, use_container_width=True, config={'displayModeBar': False})
 
         with col2:
             st.subheader("Dados Detalhados")
@@ -390,7 +390,7 @@ def main():
                 color_discrete_sequence=['#1f77b4']
             )
             fig_timeline.update_layout(height=400)
-            st.plotly_chart(fig_timeline, use_container_width=True)
+            st.plotly_chart(fig_timeline, use_container_width=True, config={'displayModeBar': False})
 
         with col2:
             st.subheader("Mudanças de Situação por Ano")
@@ -404,7 +404,7 @@ def main():
                 color_discrete_sequence=['#ff7f0e']
             )
             fig_situacao.update_layout(height=400)
-            st.plotly_chart(fig_situacao, use_container_width=True)
+            st.plotly_chart(fig_situacao, use_container_width=True, config={'displayModeBar': False})
 
         st.markdown("---")
 
@@ -427,7 +427,7 @@ def main():
         )
         fig_decada.update_traces(texttemplate='%{text:,}', textposition='outside')
         fig_decada.update_layout(height=400, showlegend=False)
-        st.plotly_chart(fig_decada, use_container_width=True)
+        st.plotly_chart(fig_decada, use_container_width=True, config={'displayModeBar': False})
 
     # TAB 5: CNAEs
     with tab5:
@@ -481,7 +481,7 @@ def main():
             hover_data={'Quantidade': ':,'}
         )
         fig_treemap.update_layout(height=500)
-        st.plotly_chart(fig_treemap, use_container_width=True)
+        st.plotly_chart(fig_treemap, use_container_width=True, config={'displayModeBar': False})
 
     # TAB 6: Exportar Dados
     with tab6:
