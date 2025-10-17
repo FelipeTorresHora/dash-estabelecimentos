@@ -303,14 +303,14 @@ def main():
                     feature['properties']['name']
                 )
 
-            # Criar mapa coroplético
+            # Criar mapa coroplético (RdYlGn)
             fig_map = px.choropleth(
                 mun_data,
                 geojson=geojson_data,
                 locations='municipio_normalizado',
                 featureidkey="properties.name_normalized",
                 color='quantidade',
-                color_continuous_scale="YlOrRd", # ou utilizar RdYlGn
+                color_continuous_scale="YlOrRd", 
                 hover_name='municipio',
                 hover_data={'municipio_normalizado': False, 'quantidade': ':,'},
                 labels={'quantidade': 'Estabelecimentos'}
