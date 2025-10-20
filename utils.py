@@ -115,6 +115,53 @@ def get_top_cnaes(df, top_n=20):
     return top_cnae
 
 
+@st.cache_data
+def load_cnae_descriptions(file_path="dados/codigos_cnae_2.csv"):
+    """
+    Carrega o arquivo CSV com descrições de CNAEs
+    Formato esperado: CNAE;DESCRIÇÃO
+    """
+    df_cnae = pd.read_csv(file_path, sep=';', dtype={'CNAE': str}, encoding='utf-8-sig')
+    # Remover espaços e garantir formato consistente
+    df_cnae['CNAE'] = df_cnae['CNAE'].str.strip()
+    df_cnae['DESCRIÇÃO'] = df_cnae['DESCRIÇÃO'].str.strip()
+    return df_cnae
+
+
+def get_top_cnaes_with_description(df, df_cnae, top_n=20):
+    """
+    Retorna os top N CNAEs mais comuns COM descrições
+    """
+    # Obter top CNAEs
+    top_cnae = df['cnae_fiscal_principal'].value_counts().head(top_n).reset_index()
+    top_cnae.columns = ['CNAE', 'Quantidade']
+
+    # Garantir que CNAE é string
+    top_cnae['CNAE'] = top_cnae['CNAE'].astype(str).str.strip()
+
+    # Fazer merge com descrições
+    top_cnae = top_cnae.merge(
+        df_cnae[['CNAE', 'DESCRIÇÃO']],
+        on='CNAE',
+        how='left'
+    )
+
+    # Preencher descrições ausentes
+    top_cnae['DESCRIÇÃO'] = top_cnae['DESCRIÇÃO'].fillna('Descrição não encontrada')
+
+    # Criar coluna combinada para exibição
+    top_cnae['CNAE_Descricao'] = top_cnae['CNAE'] + ' - ' + top_cnae['DESCRIÇÃO']
+
+    # Sanitizar dados
+    top_cnae = sanitize_chart_data(
+        top_cnae,
+        text_columns=['CNAE', 'DESCRIÇÃO', 'CNAE_Descricao'],
+        numeric_columns=['Quantidade']
+    )
+
+    return top_cnae
+
+
 def get_situacao_distribution(df):
     """
     Retorna a distribuição por situação cadastral
