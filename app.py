@@ -707,75 +707,75 @@ def main():
 
     st.dataframe(top_cnaes_display, hide_index=True, use_container_width=True, height=600)
 
-    # ============================================
-    # SEÇÃO 5: EXPORTAR DADOS
-    # ============================================
-    st.markdown("---")
-    st.markdown('<p class="section-header">📥 Exportar Dados</p>', unsafe_allow_html=True)
+    # # ============================================
+    # # SEÇÃO 5: EXPORTAR DADOS
+    # # ============================================
+    # st.markdown("---")
+    # st.markdown('<p class="section-header">📥 Exportar Dados</p>', unsafe_allow_html=True)
 
-    st.info(f"📊 Você está prestes a exportar {len(df_filtered):,} registros.")
+    # st.info(f"📊 Você está prestes a exportar {len(df_filtered):,} registros.")
 
-    # Opções de exportação
-    col1, col2 = st.columns(2)
+    # # Opções de exportação
+    # col1, col2 = st.columns(2)
 
-    with col1:
-        st.subheader("Formato CSV")
-        st.markdown("Exportar dados em formato CSV (texto separado por vírgulas)")
+    # with col1:
+    #     st.subheader("Formato CSV")
+    #     st.markdown("Exportar dados em formato CSV (texto separado por vírgulas)")
 
-        csv_data = utils.export_to_csv(df_filtered)
+    #     csv_data = utils.export_to_csv(df_filtered)
 
-        st.download_button(
-            label="📥 Download CSV",
-            data=csv_data,
-            file_name=f"estabelecimentos_ativos_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
+    #     st.download_button(
+    #         label="📥 Download CSV",
+    #         data=csv_data,
+    #         file_name=f"estabelecimentos_ativos_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+    #         mime="text/csv",
+    #         use_container_width=True
+    #     )
 
-    with col2:
-        st.subheader("Formato Excel")
-        st.markdown("Exportar dados em formato Excel (.xlsx)")
+    # with col2:
+    #     st.subheader("Formato Excel")
+    #     st.markdown("Exportar dados em formato Excel (.xlsx)")
 
-        if st.button("Preparar Excel", use_container_width=True):
-            with st.spinner("Preparando arquivo Excel..."):
-                excel_data = utils.export_to_excel(df_filtered)
+    #     if st.button("Preparar Excel", use_container_width=True):
+    #         with st.spinner("Preparando arquivo Excel..."):
+    #             excel_data = utils.export_to_excel(df_filtered)
 
-                st.download_button(
-                    label="📥 Download Excel",
-                    data=excel_data,
-                    file_name=f"estabelecimentos_ativos_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True
-                )
+    #             st.download_button(
+    #                 label="📥 Download Excel",
+    #                 data=excel_data,
+    #                 file_name=f"estabelecimentos_ativos_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+    #                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    #                 use_container_width=True
+    #             )
 
-    st.markdown("---")
+    # st.markdown("---")
 
-    # Preview dos dados
-    st.subheader("Preview dos Dados")
+    # # Preview dos dados
+    # st.subheader("Preview dos Dados")
 
-    n_rows = st.slider("Número de linhas para visualizar", 10, 1000, 100, step=10, key="slider_preview")
+    # n_rows = st.slider("Número de linhas para visualizar", 10, 1000, 100, step=10, key="slider_preview")
 
-    st.dataframe(
-        df_filtered.head(n_rows),
-        hide_index=True,
-        use_container_width=True,
-        height=400
-    )
+    # st.dataframe(
+    #     df_filtered.head(n_rows),
+    #     hide_index=True,
+    #     use_container_width=True,
+    #     height=400
+    # )
 
-    # ============================================
-    # FOOTER
-    # ============================================
-    st.markdown("---")
-    st.markdown(
-        """
-        <div style='text-align: center; color: #666; padding: 1rem;'>
-            Dashboard de Análise - Estabelecimentos Ativos RFB (RS) |
-            Desenvolvido com Streamlit e Seaborn |
-            Dados: Receita Federal do Brasil
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    # # ============================================
+    # # FOOTER
+    # # ============================================
+    # st.markdown("---")
+    # st.markdown(
+    #     """
+    #     <div style='text-align: center; color: #666; padding: 1rem;'>
+    #         Dashboard de Análise - Estabelecimentos Ativos RFB (RS) |
+    #         Desenvolvido com Streamlit e Seaborn |
+    #         Dados: Receita Federal do Brasil
+    #     </div>
+    #     """,
+    #     unsafe_allow_html=True
+    # )
 
 
 if __name__ == "__main__":
