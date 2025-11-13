@@ -405,7 +405,22 @@ def main():
 
     # Carregar dados de empresas fechadas (usado na análise temporal)
     try:
-        df_baixadas = utils.load_data_baixadas("dado_bruto/estabelecimentos_filtrado.csv")
+        # Carregar os 4 arquivos CSV
+        arquivos_baixadas = [
+            "dados/estabelecimentos_filtrado_parte1.csv",
+            "dados/estabelecimentos_filtrado_parte2.csv",
+            "dados/estabelecimentos_filtrado_parte3.csv",
+            "dados/estabelecimentos_filtrado_parte4.csv"
+        ]
+
+        dfs_baixadas = []
+        for arquivo in arquivos_baixadas:
+            df_temp = utils.load_data(arquivo)
+            # Filtrar apenas empresas fechadas (situacao != '02' ATIVA)
+            df_temp = df_temp[df_temp['situacao_cadastral'] != '02'].copy()
+            dfs_baixadas.append(df_temp)
+
+        df_baixadas = pd.concat(dfs_baixadas, ignore_index=True)
 
         # Aplicar filtro de anos da sidebar (ano de fechamento)
         if anos_selecionados:
