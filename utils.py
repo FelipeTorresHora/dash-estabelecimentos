@@ -76,6 +76,80 @@ def process_data(df):
     return df
 
 
+@st.cache_data
+def load_data_baixadas(file_path):
+    """
+    Carrega o arquivo CSV apenas com empresas FECHADAS (situação cadastral != '02')
+    Inclui: NULA ('01'), SUSPENSA ('03'), INAPTA ('04'), BAIXADA ('08')
+    """
+    dtype_spec = {
+        'cnpj_basico': str,
+        'identificador_matriz_filial': str,
+        'situacao_cadastral': str,
+        'data_situacao_cadastral': str,
+        'data_inicio_atividade': str,
+        'cnae_fiscal_principal': str,
+        'nome_municipio': str
+    }
+
+    # Carregar dados
+    df = pd.read_csv(file_path, dtype=dtype_spec)
+
+    # Filtrar apenas empresas fechadas (situacao != '02' ATIVA)
+    df = df[df['situacao_cadastral'] != '02'].copy()
+
+    # Processar dados
+    df = process_data(df)
+
+    return df
+
+
+def get_fechamentos_por_municipio_ano(df, top_n=20):
+    """
+    Prepara dados em formato pivot table para heatmap
+    Retorna DataFrame com:
+    - Linhas: Top N municípios com mais fechamentos
+    - Colunas: Anos
+    - Valores: Quantidade de fechamentos
+
+    Args:
+        df: DataFrame com empresas fechadas
+        top_n: Número de municípios a exibir (padrão: 20)
+
+    Returns:
+        DataFrame pivotado pronto para heatmap
+    """
+    # Remover registros sem data válida
+    df_valido = df[df['ano_situacao'].notna()].copy()
+
+    # Filtrar anos válidos (últimos 30 anos, por exemplo)
+    ano_atual = datetime.now().year
+    df_valido = df_valido[
+        (df_valido['ano_situacao'] >= ano_atual - 30) &
+        (df_valido['ano_situacao'] <= ano_atual)
+    ]
+
+    # Identificar top municípios com mais fechamentos
+    top_municipios = df_valido['nome_municipio'].value_counts().head(top_n).index
+    df_top = df_valido[df_valido['nome_municipio'].isin(top_municipios)]
+
+    # Criar pivot table
+    heatmap_data = df_top.pivot_table(
+        index='nome_municipio',
+        columns='ano_situacao',
+        values='cnpj_basico',
+        aggfunc='count',
+        fill_value=0
+    )
+
+    # Ordenar municípios por total de fechamentos (descendente)
+    heatmap_data['total'] = heatmap_data.sum(axis=1)
+    heatmap_data = heatmap_data.sort_values('total', ascending=False)
+    heatmap_data = heatmap_data.drop('total', axis=1)
+
+    return heatmap_data
+
+
 def get_summary_stats(df):
     """
     Retorna estatísticas resumidas do dataset

@@ -87,8 +87,7 @@ def main():
     # ============================================
     # HEADER PRINCIPAL
     # ============================================
-    st.markdown('<p class="main-header">📊 Dashboard - Estabelecimentos Ativos RFB (RS)</p>', unsafe_allow_html=True)
-    st.markdown("*Análise de estabelecimentos com situação cadastral ativa no Rio Grande do Sul*")
+    st.markdown('<p class="main-header">📊 Dashboard - Análise de estabelecimentos no Rio Grande do Sul</p>', unsafe_allow_html=True)
     st.markdown("---")
 
     # ============================================
@@ -131,12 +130,48 @@ def main():
         default=[]
     )
 
+    # Filtro de CNAE
+    cnaes_selecionados = []
+    if not df_cnae.empty:
+        # Obter CNAEs únicos dos dados
+        cnaes_nos_dados = df['cnae_fiscal_principal'].dropna().unique()
+
+        # Filtrar apenas CNAEs que existem nos dados e criar opções com descrição
+        df_cnae_filtrado = df_cnae[df_cnae['CNAE'].isin(cnaes_nos_dados)].copy()
+        df_cnae_filtrado['CNAE_Display'] = df_cnae_filtrado['CNAE'] + ' - ' + df_cnae_filtrado['DESCRIÇÃO']
+
+        # Ordenar por descrição
+        df_cnae_filtrado = df_cnae_filtrado.sort_values('DESCRIÇÃO')
+
+        # Criar mapeamento display -> código
+        cnae_options = df_cnae_filtrado['CNAE_Display'].tolist()
+        cnae_mapping = dict(zip(df_cnae_filtrado['CNAE_Display'], df_cnae_filtrado['CNAE']))
+
+        cnaes_selecionados_display = st.sidebar.multiselect(
+            "CNAE - Atividade Econômica",
+            options=cnae_options,
+            default=[],
+            help="Classificação Nacional de Atividades Econômicas"
+        )
+
+        # Converter display para códigos
+        cnaes_selecionados = [cnae_mapping[display] for display in cnaes_selecionados_display]
+    else:
+        # Fallback se não houver descrições
+        cnaes_disponiveis = sorted(df['cnae_fiscal_principal'].dropna().unique().tolist())
+        cnaes_selecionados = st.sidebar.multiselect(
+            "CNAE - Atividade Econômica",
+            options=cnaes_disponiveis,
+            default=[],
+            help="Classificação Nacional de Atividades Econômicas"
+        )
+
     # Filtro de ano de início
     anos_disponiveis = sorted([int(x) for x in df['ano_inicio'].dropna().unique() if 1900 <= x <= datetime.now().year])
     if anos_disponiveis:
         ano_min, ano_max = min(anos_disponiveis), max(anos_disponiveis)
         anos_selecionados = st.sidebar.slider(
-            "Ano de Início da Atividade",
+            "Empresas que tiveram data de inicio de atividade entre os anos:",
             min_value=ano_min,
             max_value=ano_max,
             value=(ano_min, ano_max)
@@ -150,6 +185,8 @@ def main():
         filters['tipo_estabelecimento'] = tipos_selecionados
     if municipios_selecionados:
         filters['nome_municipio'] = municipios_selecionados
+    if cnaes_selecionados:
+        filters['cnae_fiscal_principal'] = cnaes_selecionados
 
     df_filtered = utils.filter_dataframe(df, filters)
 
@@ -366,6 +403,21 @@ def main():
         top_municipios['Percentual'] = top_municipios['Percentual'].astype(str) + '%'
         st.dataframe(top_municipios, hide_index=True, use_container_width=True, height=600)
 
+    # Carregar dados de empresas fechadas (usado na análise temporal)
+    try:
+        df_baixadas = utils.load_data_baixadas("dado_bruto/estabelecimentos_filtrado.csv")
+
+        # Aplicar filtro de anos da sidebar (ano de fechamento)
+        if anos_selecionados:
+            df_baixadas_filtered = df_baixadas[
+                (df_baixadas['ano_situacao'] >= anos_selecionados[0]) &
+                (df_baixadas['ano_situacao'] <= anos_selecionados[1])
+            ]
+        else:
+            df_baixadas_filtered = df_baixadas
+    except Exception as e:
+        df_baixadas_filtered = pd.DataFrame()  # DataFrame vazio em caso de erro
+
     # ============================================
     # SEÇÃO 3: ANÁLISE TEMPORAL
     # ============================================
@@ -407,56 +459,162 @@ def main():
         st.info("ℹ️ Este gráfico mostra quantos estabelecimentos **ativos hoje** iniciaram suas atividades em cada ano.")
 
     with col2:
-        st.subheader("Estabelecimentos Ativos por Década de Início")
+        st.subheader("📊 Evolução de Fechamentos por ano (Estabelecimentos Fechadas)")
 
-        df_decada = df_filtered[df_filtered['ano_inicio'].notna()].copy()
-        df_decada['decada'] = (df_decada['ano_inicio'] // 10 * 10).astype(int)
-        dist_decada = df_decada['decada'].value_counts().sort_index().reset_index()
-        dist_decada.columns = ['Década', 'Quantidade']
-        dist_decada['Década'] = dist_decada['Década'].astype(str) + 's'
+        if not df_baixadas_filtered.empty:
+            timeline_baixadas = utils.get_timeline_data(df_baixadas_filtered, date_column='ano_situacao')
 
-        # Criar gráfico de barras com matplotlib (cores mais escuras)
-        fig_decada, ax = plt.subplots(figsize=(12, 6))
+            if not timeline_baixadas.empty:
+                fig_timeline_fechadas, ax_timeline_fechadas = plt.subplots(figsize=(12, 6))
 
-        # Criar paleta de cores gradiente (mais escura)
-        norm = plt.Normalize(
-            vmin=dist_decada['Quantidade'].min(),
-            vmax=dist_decada['Quantidade'].max()
-        )
-        colors = plt.cm.cividis(norm(dist_decada['Quantidade']))
+                ax_timeline_fechadas.plot(
+                    timeline_baixadas['Ano'],
+                    timeline_baixadas['Quantidade'],
+                    marker='o',
+                    linewidth=2,
+                    markersize=6,
+                    color='#d62728',
+                    label='Fechamentos'
+                )
 
-        bars = ax.bar(
-            dist_decada['Década'],
-            dist_decada['Quantidade'],
-            color=colors,
-            edgecolor='black',
-            linewidth=0.7
-        )
+                ax_timeline_fechadas.fill_between(
+                    timeline_baixadas['Ano'],
+                    timeline_baixadas['Quantidade'],
+                    alpha=0.3,
+                    color='#d62728'
+                )
 
-        # Adicionar rótulos de valor nas barras
-        for bar in bars:
-            height = bar.get_height()
-            ax.text(
-                bar.get_x() + bar.get_width() / 2.,
-                height,
-                f'{int(height):,}',
-                ha='center',
-                va='bottom',
-                fontsize=9,
-                fontweight='bold'
-            )
+                ax_timeline_fechadas.set_xlabel('Ano', fontsize=11, fontweight='bold')
+                ax_timeline_fechadas.set_ylabel('Quantidade de Fechamentos', fontsize=11, fontweight='bold')
+                ax_timeline_fechadas.grid(True, alpha=0.3, linestyle='--')
+                ax_timeline_fechadas.legend()
 
-        ax.set_xlabel('Década', fontsize=11, fontweight='bold')
-        ax.set_ylabel('Quantidade', fontsize=11, fontweight='bold')
-        ax.tick_params(axis='x', rotation=45)
-        plt.xticks(ha='right')
-        plt.tight_layout()
-        st.pyplot(fig_decada)
+                plt.tight_layout()
+                st.pyplot(fig_timeline_fechadas)
 
-        st.info("ℹ️ Agrupa os estabelecimentos ativos por década de início de atividade (ex: 2010s = iniciados entre 2010-2019).")
+                st.info("ℹ️ Gráfico mostrando a quantidade total de fechamentos de empresas por ano.")
+            else:
+                st.warning("Não há dados de timeline disponíveis.")
+        else:
+            st.warning("Não foi possível carregar dados de empresas fechadas.")
 
     # ============================================
-    # SEÇÃO 4: ANÁLISE POR CNAE
+    # SEÇÃO 4: ANÁLISE DE EMPRESAS FECHADAS
+    # ============================================
+    st.markdown("---")
+    st.markdown('<p class="section-header">📉 Análise de Empresas Fechadas</p>', unsafe_allow_html=True)
+
+    # Nota: df_baixadas_filtered já foi carregado antes da seção de análise temporal
+    try:
+        if not df_baixadas_filtered.empty:
+            # Calcular info do período
+            if anos_selecionados:
+                periodo_info = f"Fechamentos entre {anos_selecionados[0]} e {anos_selecionados[1]}"
+            else:
+                periodo_info = "Todos os períodos"
+
+            # Informações sobre situações cadastrais não-ativas
+            st.info(f"""
+            📌 **Empresas Fechadas**: Situação cadastral diferente de ATIVA
+            - **Período:** {periodo_info}
+            - **Total de fechamentos no período:** {len(df_baixadas_filtered):,}
+            - **Tipos incluídos:** NULA, SUSPENSA, INAPTA, BAIXADA
+            """)
+
+            # Distribuição por tipo de situação cadastral
+            col1, col2, col3, col4 = st.columns(4)
+
+            situacao_counts = df_baixadas_filtered['situacao_descricao'].value_counts()
+
+            with col1:
+                baixada = situacao_counts.get('BAIXADA', 0)
+                st.metric("Baixadas", f"{baixada:,}")
+
+            with col2:
+                suspensa = situacao_counts.get('SUSPENSA', 0)
+                st.metric("Suspensas", f"{suspensa:,}")
+
+            with col3:
+                inapta = situacao_counts.get('INAPTA', 0)
+                st.metric("Inaptas", f"{inapta:,}")
+
+            with col4:
+                nula = situacao_counts.get('NULA', 0)
+                st.metric("Nulas", f"{nula:,}")
+
+            # Mapa geográfico de fechamentos por município
+            st.subheader("🗺️ Mapa Geográfico - Fechamentos por Município")
+
+            try:
+                import geopandas as gpd
+
+                # Carregar GeoJSON dos municípios do RS
+                geojson_data = utils.load_geojson("dados/municipios_rs.json")
+
+                # Preparar dados agregados por município
+                mun_data_fechadas = utils.get_municipios_data_for_map(df_baixadas_filtered)
+
+                # Converter GeoJSON para GeoDataFrame
+                gdf = gpd.GeoDataFrame.from_features(geojson_data['features'])
+
+                # Normalizar nomes dos municípios para merge
+                gdf['name_normalized'] = gdf['name'].apply(utils.normalize_municipio_name)
+
+                # Fazer merge com os dados de fechamentos
+                gdf = gdf.merge(
+                    mun_data_fechadas,
+                    left_on='name_normalized',
+                    right_on='municipio_normalizado',
+                    how='left'
+                )
+
+                # Preencher municípios sem dados com 0
+                gdf['quantidade'] = gdf['quantidade'].fillna(0)
+
+                # Criar mapa coroplético
+                fig_map_fechadas, ax_fechadas = plt.subplots(figsize=(14, 10))
+
+                # Plotar o mapa com cores representando quantidade de fechamentos
+                gdf.plot(
+                    column='quantidade',
+                    cmap='Reds',  # Paleta vermelha para fechamentos
+                    linewidth=0.5,
+                    edgecolor='black',
+                    legend=True,
+                    ax=ax_fechadas,
+                    legend_kwds={
+                        'label': 'Quantidade de Fechamentos',
+                        'orientation': 'vertical',
+                        'shrink': 0.7
+                    }
+                )
+
+                ax_fechadas.set_title(
+                    'Distribuição de Empresas Fechadas por Município (RS)',
+                    fontsize=14,
+                    fontweight='bold',
+                    pad=20
+                )
+                ax_fechadas.axis('off')
+                plt.tight_layout()
+                st.pyplot(fig_map_fechadas)
+
+                st.info(f"ℹ️ Mapa geográfico do Rio Grande do Sul mostrando a distribuição de fechamentos por município. {periodo_info}. Cores mais intensas indicam maior quantidade de fechamentos.")
+
+            except Exception as e:
+                st.warning(f"⚠️ Não foi possível carregar o mapa geográfico: {str(e)}")
+                st.info("Verifique se o arquivo 'dados/municipios_rs.json' está disponível.")
+
+        else:
+            st.warning("Não foram encontradas empresas fechadas nos dados.")
+
+    except FileNotFoundError:
+        st.error("❌ Arquivo de dados brutos não encontrado. Certifique-se de que o arquivo 'dado_bruto/estabelecimentos_filtrado.csv' existe.")
+    except Exception as e:
+        st.error(f"❌ Erro ao carregar dados de empresas fechadas: {str(e)}")
+
+    # ============================================
+    # SEÇÃO 5: ANÁLISE POR CNAE
     # ============================================
     st.markdown("---")
     st.markdown('<p class="section-header">💼 Análise por CNAE</p>', unsafe_allow_html=True)
