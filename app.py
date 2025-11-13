@@ -58,10 +58,10 @@ def load_dataset():
     """
     # Lista dos arquivos divididos
     arquivos = [
-        "dados/estabelecimentos_filtrado_parte1.csv",
-        "dados/estabelecimentos_filtrado_parte2.csv",
-        "dados/estabelecimentos_filtrado_parte3.csv",
-        "dados/estabelecimentos_filtrado_parte4.csv"
+        "dados/estabelecimentos_filtrado_parte1.parquet",
+        "dados/estabelecimentos_filtrado_parte2.parquet",
+        "dados/estabelecimentos_filtrado_parte3.parquet",
+        "dados/estabelecimentos_filtrado_parte4.parquet"
     ]
 
     # Lista para armazenar os DataFrames
@@ -113,14 +113,6 @@ def main():
     # SIDEBAR - FILTROS
     # ============================================
     st.sidebar.header("🔍 Filtros")
-
-    # Filtro de tipo (matriz/filial)
-    tipos_disponiveis = sorted(df['tipo_estabelecimento'].dropna().unique().tolist())
-    tipos_selecionados = st.sidebar.multiselect(
-        "Tipo de Estabelecimento",
-        options=tipos_disponiveis,
-        default=[]
-    )
 
     # Filtro de município
     municipios_disponiveis = sorted(df['nome_municipio'].dropna().unique().tolist())
@@ -181,8 +173,6 @@ def main():
 
     # Aplicar filtros
     filters = {}
-    if tipos_selecionados:
-        filters['tipo_estabelecimento'] = tipos_selecionados
     if municipios_selecionados:
         filters['nome_municipio'] = municipios_selecionados
     if cnaes_selecionados:
@@ -234,52 +224,6 @@ def main():
             label="CNAEs Distintos",
             value=f"{stats['total_cnaes']:,}"
         )
-
-    st.markdown("---")
-
-    # Gráfico de Distribuição Matriz/Filial
-    st.subheader("🏢 Distribuição Matriz/Filial")
-
-    col1, col2 = st.columns([2, 1])
-
-    with col1:
-        dist_mf = utils.get_matriz_filial_distribution(df_filtered)
-
-        # Criar gráfico de pizza com matplotlib
-        fig_mf, ax = plt.subplots(figsize=(10, 6))
-        colors = sns.color_palette("dark", len(dist_mf))
-
-        wedges, texts, autotexts = ax.pie(
-            dist_mf['Quantidade'],
-            labels=dist_mf['Tipo'],
-            autopct='%1.1f%%',
-            startangle=90,
-            colors=colors,
-            wedgeprops=dict(width=0.6),
-            textprops={'fontsize': 12, 'weight': 'bold'}
-        )
-
-        # Melhorar aparência do texto
-        for autotext in autotexts:
-            autotext.set_color('white')
-            autotext.set_fontweight('bold')
-            autotext.set_fontsize(11)
-
-        for text in texts:
-            text.set_fontsize(12)
-            text.set_fontweight('bold')
-
-        ax.axis('equal')
-        plt.tight_layout()
-        st.pyplot(fig_mf)
-
-    with col2:
-        st.markdown("### Dados")
-        dist_mf['Percentual'] = (
-            dist_mf['Quantidade'] / dist_mf['Quantidade'].sum() * 100
-        ).round(2)
-        dist_mf['Percentual'] = dist_mf['Percentual'].astype(str) + '%'
-        st.dataframe(dist_mf, hide_index=True, use_container_width=True)
 
     # ============================================
     # SEÇÃO 2: ANÁLISE GEOGRÁFICA
@@ -405,12 +349,12 @@ def main():
 
     # Carregar dados de empresas fechadas (usado na análise temporal)
     try:
-        # Carregar os 4 arquivos CSV
+        # Carregar os 4 arquivos Parquet
         arquivos_baixadas = [
-            "dados/estabelecimentos_filtrado_parte1.csv",
-            "dados/estabelecimentos_filtrado_parte2.csv",
-            "dados/estabelecimentos_filtrado_parte3.csv",
-            "dados/estabelecimentos_filtrado_parte4.csv"
+            "dados/estabelecimentos_filtrado_parte1.parquet",
+            "dados/estabelecimentos_filtrado_parte2.parquet",
+            "dados/estabelecimentos_filtrado_parte3.parquet",
+            "dados/estabelecimentos_filtrado_parte4.parquet"
         ]
 
         dfs_baixadas = []

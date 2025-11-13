@@ -16,29 +16,27 @@ SITUACAO_CADASTRAL = {
     '08': 'BAIXADA'
 }
 
-# Mapeamento de identificador matriz/filial
-MATRIZ_FILIAL = {
-    '1': 'MATRIZ',
-    '2': 'FILIAL'
-}
-
 
 @st.cache_data
 def load_data(file_path):
     """
-    Carrega o arquivo CSV com otimização de tipos de dados
+    Carrega o arquivo CSV ou Parquet com otimização de tipos de dados
     """
-    dtype_spec = {
-        'cnpj_basico': str,
-        'identificador_matriz_filial': str,
-        'situacao_cadastral': str,
-        'data_situacao_cadastral': str,
-        'data_inicio_atividade': str,
-        'cnae_fiscal_principal': str,
-        'nome_municipio': str
-    }
-
-    df = pd.read_csv(file_path, dtype=dtype_spec)
+    # Detectar formato pelo caminho do arquivo
+    if file_path.endswith('.parquet'):
+        # Ler Parquet (tipos já preservados no arquivo)
+        df = pd.read_parquet(file_path, engine='pyarrow')
+    else:
+        # Ler CSV com tipos especificados
+        dtype_spec = {
+            'cnpj_basico': str,
+            'situacao_cadastral': str,
+            'data_situacao_cadastral': str,
+            'data_inicio_atividade': str,
+            'cnae_fiscal_principal': str,
+            'nome_municipio': str
+        }
+        df = pd.read_csv(file_path, dtype=dtype_spec)
 
     # Processar dados
     df = process_data(df)
@@ -52,9 +50,6 @@ def process_data(df):
     """
     # Mapear situação cadastral
     df['situacao_descricao'] = df['situacao_cadastral'].map(SITUACAO_CADASTRAL)
-
-    # Mapear matriz/filial
-    df['tipo_estabelecimento'] = df['identificador_matriz_filial'].map(MATRIZ_FILIAL)
 
     # Converter datas
     df['data_situacao_cadastral'] = pd.to_datetime(
@@ -79,21 +74,24 @@ def process_data(df):
 @st.cache_data
 def load_data_baixadas(file_path):
     """
-    Carrega o arquivo CSV apenas com empresas FECHADAS (situação cadastral != '02')
+    Carrega o arquivo CSV ou Parquet apenas com empresas FECHADAS (situação cadastral != '02')
     Inclui: NULA ('01'), SUSPENSA ('03'), INAPTA ('04'), BAIXADA ('08')
     """
-    dtype_spec = {
-        'cnpj_basico': str,
-        'identificador_matriz_filial': str,
-        'situacao_cadastral': str,
-        'data_situacao_cadastral': str,
-        'data_inicio_atividade': str,
-        'cnae_fiscal_principal': str,
-        'nome_municipio': str
-    }
-
-    # Carregar dados
-    df = pd.read_csv(file_path, dtype=dtype_spec)
+    # Detectar formato pelo caminho do arquivo
+    if file_path.endswith('.parquet'):
+        # Ler Parquet (tipos já preservados no arquivo)
+        df = pd.read_parquet(file_path, engine='pyarrow')
+    else:
+        # Ler CSV com tipos especificados
+        dtype_spec = {
+            'cnpj_basico': str,
+            'situacao_cadastral': str,
+            'data_situacao_cadastral': str,
+            'data_inicio_atividade': str,
+            'cnae_fiscal_principal': str,
+            'nome_municipio': str
+        }
+        df = pd.read_csv(file_path, dtype=dtype_spec)
 
     # Filtrar apenas empresas fechadas (situacao != '02' ATIVA)
     df = df[df['situacao_cadastral'] != '02'].copy()
@@ -156,8 +154,6 @@ def get_summary_stats(df):
     """
     stats = {
         'total_estabelecimentos': len(df),
-        'total_matrizes': len(df[df['tipo_estabelecimento'] == 'MATRIZ']),
-        'total_filiais': len(df[df['tipo_estabelecimento'] == 'FILIAL']),
         'total_ativos': len(df[df['situacao_descricao'] == 'ATIVA']),
         'total_baixados': len(df[df['situacao_descricao'] == 'BAIXADA']),
         'total_municipios': df['nome_municipio'].nunique(),
@@ -244,17 +240,6 @@ def get_situacao_distribution(df):
     dist.columns = ['Situação', 'Quantidade']
     # Sanitizar dados para evitar erros JavaScript
     dist = sanitize_chart_data(dist, text_columns=['Situação'], numeric_columns=['Quantidade'])
-    return dist
-
-
-def get_matriz_filial_distribution(df):
-    """
-    Retorna a distribuição matriz/filial
-    """
-    dist = df['tipo_estabelecimento'].value_counts().reset_index()
-    dist.columns = ['Tipo', 'Quantidade']
-    # Sanitizar dados para evitar erros JavaScript
-    dist = sanitize_chart_data(dist, text_columns=['Tipo'], numeric_columns=['Quantidade'])
     return dist
 
 
