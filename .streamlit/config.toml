@@ -1,2 +1,20 @@
 [server]
+# Aumenta o limite de upload para arquivos grandes
 maxUploadSize = 1028
+
+# Desabilita CORS para deploy no Streamlit Cloud
+enableCORS = false
+
+# Desabilita proteção XSRF (não necessário para dashboards públicos)
+enableXsrfProtection = false
+
+[browser]
+# Desabilita coleta de estatísticas de uso
+gatherUsageStats = false
+
+[client]
+# Mostra detalhes de erro para debugging
+showErrorDetails = true
+
+# Toolbar sempre visível
+toolbarMode = "auto"

@@ -26,6 +26,10 @@ def load_data(file_path):
     if file_path.endswith('.parquet'):
         # Ler Parquet (tipos já preservados no arquivo)
         df = pd.read_parquet(file_path, engine='pyarrow')
+
+        # NORMALIZAR: Garantir formato de 2 dígitos para situacao_cadastral
+        if 'situacao_cadastral' in df.columns:
+            df['situacao_cadastral'] = df['situacao_cadastral'].astype(str).str.zfill(2).str.strip()
     else:
         # Ler CSV com tipos especificados
         dtype_spec = {
@@ -81,6 +85,10 @@ def load_data_baixadas(file_path):
     if file_path.endswith('.parquet'):
         # Ler Parquet (tipos já preservados no arquivo)
         df = pd.read_parquet(file_path, engine='pyarrow')
+
+        # NORMALIZAR: Garantir formato de 2 dígitos para situacao_cadastral
+        if 'situacao_cadastral' in df.columns:
+            df['situacao_cadastral'] = df['situacao_cadastral'].astype(str).str.zfill(2).str.strip()
     else:
         # Ler CSV com tipos especificados
         dtype_spec = {
@@ -148,16 +156,48 @@ def get_fechamentos_por_municipio_ano(df, top_n=20):
     return heatmap_data
 
 
-def get_summary_stats(df):
+def get_summary_stats(df, df_baixadas=None):
     """
     Retorna estatísticas resumidas do dataset
+
+    Args:
+        df: DataFrame com estabelecimentos (geralmente ativos)
+        df_baixadas: DataFrame opcional com estabelecimentos baixados/inativos
+
+    Returns:
+        dict com estatísticas resumidas
     """
+    # Calcular total de estabelecimentos (ativos + inativos se fornecido)
+    total_estabelecimentos = len(df)
+    if df_baixadas is not None:
+        total_estabelecimentos += len(df_baixadas)
+
+    # Calcular total de ativos (sempre do df principal)
+    total_ativos = len(df[df['situacao_descricao'] == 'ATIVA'])
+
+    # Calcular total de baixados
+    if df_baixadas is not None:
+        # Se df_baixadas fornecido, contar todos os registros nele
+        total_baixados = len(df_baixadas)
+    else:
+        # Senão, buscar no df principal
+        total_baixados = len(df[df['situacao_descricao'] == 'BAIXADA'])
+
+    # Combinar DataFrames para estatísticas únicas (municípios e CNAEs)
+    if df_baixadas is not None:
+        df_combined = pd.concat([df, df_baixadas], ignore_index=True)
+        total_municipios = df_combined['nome_municipio'].nunique()
+        total_cnaes = df_combined['cnae_fiscal_principal'].nunique()
+    else:
+        total_municipios = df['nome_municipio'].nunique()
+        total_cnaes = df['cnae_fiscal_principal'].nunique()
+
     stats = {
-        'total_estabelecimentos': len(df),
-        'total_ativos': len(df[df['situacao_descricao'] == 'ATIVA']),
-        'total_baixados': len(df[df['situacao_descricao'] == 'BAIXADA']),
-        'total_municipios': df['nome_municipio'].nunique(),
-        'total_cnaes': df['cnae_fiscal_principal'].nunique()
+        'total_estabelecimentos': total_estabelecimentos,
+        'total_ativos': total_ativos,
+        'total_baixados': total_baixados,
+        'total_municipios': total_municipios,
+        'total_cnaes': total_cnaes
     }
 
     return stats
